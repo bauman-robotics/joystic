@@ -95,7 +95,19 @@ void StartTask02(void *argument);
 void Callback01(void *argument);
 
 /* USER CODE BEGIN PFP */
-
+void joysticTransmition(int k, uint8_t* txBuf);
+void joysticTransmition(int k, uint8_t* txBuf)
+{
+	uint8_t rxBuf[2];
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
+	for( int i = 0; i < k; i++)
+	{
+		HAL_SPI_TransmitReceive(&hspi1, txBuf+i, rxBuf, 1, 200);
+		for (int i = 0; i<100;i++);
+	}
+	
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -511,22 +523,37 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN 5 */
   /* USER CODE BEGIN StartDefaultTask */
 	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1); // Servo_1 Timer Start
-	TIM3->CCR1 = 50;
+	TIM3->CCR1 = 250;
 	
 	uint8_t txBuf[21];
 	uint8_t rxBuf[21];
+	uint8_t tx2Buf[6];
+	uint8_t rx2Buf[6];
+	uint8_t tx3Buf[41]={0x01, 0x43, 0x00, 0x01, 0x00,
+										  0x01, 0x44, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00,
+										  0x01, 0x4D, 0x00, 0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF,
+										  0x01, 0x4F, 0x00, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x00,
+										  0x01, 0x43, 0x00, 0x00, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A}; 
 	
 	txBuf[0] = 0x01;
 	txBuf[1] = 0x42;
 	txBuf[2] = 0x00;
 	txBuf[3] = 0xFF;
 	txBuf[4] = 0xFF;
+	
+	tx2Buf[0] = 0x01;
+	tx2Buf[1] = 0x4D;
+	tx2Buf[2] = 0x00;
+	tx2Buf[3] = 0x00;
+	tx2Buf[4] = 0x01;
 
 ////Motor speed	
 	TIM2->ARR = 2999;
 //	TIM4->ARR = 2999;
 
 //  /* Infinite loop */
+											
+	joysticTransmition( 41, tx3Buf);
 	float rotate_time = 10;
   for(;;)
   {
@@ -552,6 +579,24 @@ void StartDefaultTask(void *argument)
 			}
 			else{  //Square
 				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
+				
+				
+//				////vibration motors
+//				HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
+//				HAL_SPI_TransmitReceive(&hspi1, tx2Buf, rx2Buf, 1, 200);
+//				for (int i = 0; i<100;i++);
+//				HAL_SPI_TransmitReceive(&hspi1, tx2Buf+1, rx2Buf+1, 1, 200);
+//				for (int i = 0; i<100;i++);
+//				HAL_SPI_TransmitReceive(&hspi1, tx2Buf+2, rx2Buf+2, 1, 200);
+//				for (int i = 0; i<100;i++);
+//				HAL_SPI_TransmitReceive(&hspi1, tx2Buf+3, rx2Buf+3, 1, 200);
+//				for (int i = 0; i<100;i++);
+//				HAL_SPI_TransmitReceive(&hspi1, tx2Buf+4, rx2Buf+4, 1, 200);
+//				HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
+				
+				////vibration motors
+				joysticTransmition( 41, tx2Buf);
+				
 			}
 		}
 		else{
@@ -572,17 +617,17 @@ void StartDefaultTask(void *argument)
 			HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_3);
 		}
 		
-		if(((rxBuf[4] & 0x02) == 0) || ((rxBuf[4] & 0x08) == 0)){
-			if ((rxBuf[4] & 0x02) == 0){ // R2 button
-				TIM3->CCR1 = 50; // Servo_1 0 grad
-			}
-			else{ // R1 button
-				TIM3->CCR1 = 250; // Servo_1 180 grad
-			}
-		}
-		else{
-			// NO R1||R2
-		}
+//		if(((rxBuf[4] & 0x02) == 0) || ((rxBuf[4] & 0x08) == 0)){
+//			if ((rxBuf[4] & 0x02) == 0){ // R2 button
+//				TIM3->CCR1 = 50; // Servo_1 0 grad
+//			}
+//			else{ // R1 button
+//				TIM3->CCR1 = 250; // Servo_1 180 grad
+//			}
+//		}
+//		else{
+//			// NO R1||R2
+//		}
 
 
 //-------------------------------------------------------------------
