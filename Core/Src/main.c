@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -95,14 +96,26 @@ void StartTask02(void *argument);
 void Callback01(void *argument);
 
 /* USER CODE BEGIN PFP */
-void joysticTransmition(int k, uint8_t* txBuf);
 void joysticTransmition(int k, uint8_t* txBuf)
 {
-	uint8_t rxBuf[2];
+	uint8_t rxBuf[1];
 	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
 	for( int i = 0; i < k; i++)
 	{
 		HAL_SPI_TransmitReceive(&hspi1, txBuf+i, rxBuf, 1, 200);
+		for (int i = 0; i<100;i++);
+	}
+	
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
+}
+
+void joysticTrRs(int k, uint8_t* txBuf, uint8_t* rxBuf)
+{
+	//uint8_t rxBuf[1];
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
+	for( int i = 0; i < k; i++)
+	{
+		HAL_SPI_TransmitReceive(&hspi1, txBuf+i, rxBuf+i, 1, 200);
 		for (int i = 0; i<100;i++);
 	}
 	
@@ -524,86 +537,70 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN StartDefaultTask */
 	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1); // Servo_1 Timer Start
 	TIM3->CCR1 = 250;
-	
-	uint8_t txBuf[21];
-	uint8_t rxBuf[21];
-	uint8_t tx2Buf[6];
-	uint8_t rx2Buf[6];
-	uint8_t tx3Buf[41]={0x01, 0x43, 0x00, 0x01, 0x00,
-										  0x01, 0x44, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00,
-										  0x01, 0x4D, 0x00, 0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF,
-										  0x01, 0x4F, 0x00, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x00,
-										  0x01, 0x43, 0x00, 0x00, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A}; 
-	
-	txBuf[0] = 0x01;
-	txBuf[1] = 0x42;
-	txBuf[2] = 0x00;
-	txBuf[3] = 0xFF;
-	txBuf[4] = 0xFF;
-	
-	tx2Buf[0] = 0x01;
-	tx2Buf[1] = 0x4D;
-	tx2Buf[2] = 0x00;
-	tx2Buf[3] = 0x00;
-	tx2Buf[4] = 0x01;
 
+	uint8_t bufSize = 21;
+	
+	uint8_t txAnalogBuf[21] = {0x01, 0x42, 0x00, 0xFF, 0xFF,
+											 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+											 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	uint8_t rxBuf[21];
+	
+//	uint8_t tx3Buf[41]={0x01, 0x43, 0x00, 0x01, 0x00,
+//										  0x01, 0x44, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00,
+//										  0x01, 0x4D, 0x00, 0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF,
+//										  0x01, 0x4F, 0x00, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x00,
+//										  0x01, 0x43, 0x00, 0x00, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A}; 
+	
+											///////////////////////////////////////////////////////
+	uint8_t tx4Buf[5] = {0x01, 0x43, 0x00, 0x01, 0x00};
+	uint8_t tx5Buf[9] = {0x01, 0x44, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00};
+	uint8_t tx6Buf[9] = {0x01, 0x4D, 0x00, 0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF};
+	uint8_t tx7Buf[9] = {0x01, 0x4F, 0x00, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x00};
+	uint8_t tx8Buf[9] = {0x01, 0x43, 0x00, 0x00, 0x5A, 0x5A, 0x5A, 0x5A, 0x5A};											
+											
+											///////////////////////////////////////////////////////
+											
+	uint8_t txBuf[5] = {0x01, 0x42, 0x00, 0xFF, 0xFF};
+	
 ////Motor speed	
 	TIM2->ARR = 2999;
 //	TIM4->ARR = 2999;
 
 //  /* Infinite loop */
-											
-	joysticTransmition( 41, tx3Buf);
+///	trial configuration into analog mode										
+	joysticTransmition( 5, tx4Buf);
+	osDelay(50);
+	joysticTransmition( 9, tx5Buf);
+	osDelay(50);
+	joysticTransmition( 9, tx6Buf);
+	osDelay(50);
+	joysticTransmition( 9, tx7Buf);
+	osDelay(50);
+	joysticTransmition( 9, tx8Buf);
+	osDelay(50);
 	float rotate_time = 10;
   for(;;)
   {
-		HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
- 		HAL_SPI_TransmitReceive(&hspi1, txBuf, rxBuf, 1, 200);
-		for (int i = 0; i<100;i++);
-		HAL_SPI_TransmitReceive(&hspi1, txBuf+1, rxBuf+1, 1, 200);
-		for (int i = 0; i<100;i++);
-		HAL_SPI_TransmitReceive(&hspi1, txBuf+2, rxBuf+2, 1, 200);
-		for (int i = 0; i<100;i++);
-		HAL_SPI_TransmitReceive(&hspi1, txBuf+3, rxBuf+3, 1, 200);
-		for (int i = 0; i<100;i++);
-		HAL_SPI_TransmitReceive(&hspi1, txBuf+4, rxBuf+4, 1, 200);
-		HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
-///  	HAL_UART_Transmit(&huart2, rxBuf, 5, 200);
+		
+	  ///config into analog mode
+		joysticTrRs( 5, txAnalogBuf, rxBuf);
 		
 		osMessageQueuePut(myQueue01Handle, &rxBuf[4], 0, 100); // delay ???
+			
+		// START_MOOVING motors
 
-		if(((rxBuf[4] & 0x20)  == 0) || ((rxBuf[4] & 0x80)  == 0)) {    			// START_MOOVING 
+		if(((rxBuf[4] & 0x20)  == 0) || ((rxBuf[4] & 0x80)  == 0)) {    		
 			HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 			if((rxBuf[4] & 0x20)  == 0){  // Circle
 				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_RESET);
 			}
 			else{  //Square
 				HAL_GPIO_WritePin(GPIOC, GPIO_PIN_14, GPIO_PIN_SET);
-				
-				
-//				////vibration motors
-//				HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
-//				HAL_SPI_TransmitReceive(&hspi1, tx2Buf, rx2Buf, 1, 200);
-//				for (int i = 0; i<100;i++);
-//				HAL_SPI_TransmitReceive(&hspi1, tx2Buf+1, rx2Buf+1, 1, 200);
-//				for (int i = 0; i<100;i++);
-//				HAL_SPI_TransmitReceive(&hspi1, tx2Buf+2, rx2Buf+2, 1, 200);
-//				for (int i = 0; i<100;i++);
-//				HAL_SPI_TransmitReceive(&hspi1, tx2Buf+3, rx2Buf+3, 1, 200);
-//				for (int i = 0; i<100;i++);
-//				HAL_SPI_TransmitReceive(&hspi1, tx2Buf+4, rx2Buf+4, 1, 200);
-//				HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
-				
-				////vibration motors
-				joysticTransmition( 41, tx2Buf);
-				
 			}
 		}
 		else{
 		  HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
-		}
-
-		
+		}		
 		if(((rxBuf[4] & 0x10)  == 0) || ((rxBuf[4] & 0x40)  == 0)) {
 			HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
 			if((rxBuf[4] & 0x10 ) == 0){   // X button
@@ -616,18 +613,35 @@ void StartDefaultTask(void *argument)
 		else{
 			HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_3);
 		}
+		/////////////////////////////////////////////////////////////////////////////////
+		//   vibration motors
+		//	joysticTransmition( 41, tx2Buf);
+		/////////////////////////////////////////////////////////////////////////////////////////
 		
-//		if(((rxBuf[4] & 0x02) == 0) || ((rxBuf[4] & 0x08) == 0)){
-//			if ((rxBuf[4] & 0x02) == 0){ // R2 button
-//				TIM3->CCR1 = 50; // Servo_1 0 grad
-//			}
-//			else{ // R1 button
-//				TIM3->CCR1 = 250; // Servo_1 180 grad
-//			}
-//		}
-//		else{
-//			// NO R1||R2
-//		}
+		if(((rxBuf[4] & 0x02) == 0) || ((rxBuf[4] & 0x08) == 0)){
+			if ((rxBuf[4] & 0x02) == 0){ // R2 button
+				TIM3->CCR1 = 50; // Servo_1 0 grad
+			}
+			else{ // R1 button
+				TIM3->CCR1 = 250; // Servo_1 180 grad
+			}
+		}
+		else{
+			// NO R1||R2
+		}
+		
+		///////////////Servo2
+		if(((rxBuf[4] & 0x01) == 0) || ((rxBuf[4] & 0x04) == 0)){
+			if ((rxBuf[4] & 0x01) == 0){ // L2 button
+				TIM3->CCR1 = 50; // Servo_2 0 grad
+			}
+			else{ // L1 button
+				TIM3->CCR1 = 250; // Servo_2 180 grad
+			}
+		}
+		else{
+			// NO R1||R2
+		}
 
 
 //-------------------------------------------------------------------
@@ -680,7 +694,7 @@ void StartDefaultTask(void *argument)
 void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
-	uint8_t data[2] = {0, 0};
+	uint8_t data[5] = {0, 0, 0, 0, 0};
   /* Infinite loop */
   for(;;)
 	{		
@@ -700,6 +714,19 @@ void StartTask02(void *argument)
 		}
 		
   }
+			
+		if(((data[4] & 0x02) == 0) || ((data[4] & 0x08) == 0)){
+			if ((data[4] & 0x02) == 0){ // R2 button
+				TIM3->CCR1 = 50; // Servo_1 0 grad
+			}
+			else{ // R1 button
+				TIM3->CCR1 = 250; // Servo_1 180 grad
+			}
+		}
+		else{
+			// NO R1||R2
+		}
+
   /* USER CODE END StartTask02 */
 }
 
